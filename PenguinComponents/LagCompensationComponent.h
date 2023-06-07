@@ -41,10 +41,17 @@ public:
 	friend class APenguinCharacter;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, FColor Color);
+	void ServerSideRewind(
+		class APenguinCharacter* HitCharacter, 
+		const FVector_NetQuantize& TraceStart, 
+		const FVector_NetQuantize& HitLocation, 
+		float HitTime);
 	
 protected:
 	virtual void BeginPlay() override;
 	void SaveFramePackage(FFramePackage& Package);
+	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame,
+		const FFramePackage& YoungerFrame, float HitTime);
 	
 private:
 	UPROPERTY()
@@ -52,4 +59,9 @@ private:
 
 	UPROPERTY()
 	class APenguinPlayerController* Controller;
+
+	TDoubleLinkedList<FFramePackage> FrameHistory;
+
+	UPROPERTY(EditAnywhere)
+	float MaxRecordTime = 4.f;
 };
