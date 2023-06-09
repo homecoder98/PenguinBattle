@@ -47,6 +47,16 @@ public:
 	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
 	float SphereRadius = 75.f;
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	class APenguinCharacter* PenguinOwnerCharacter;
+	UPROPERTY()
+	class APenguinPlayerController* PenguinOwnerController;
 	
 	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
 	bool bUseScatter = false;
@@ -74,8 +84,6 @@ public:
 	/*
 	 *  Damage
 	 */
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f;
 
 	UPROPERTY(EditAnywhere)
 	float HeadShotDamage = 40.f;
@@ -178,12 +186,6 @@ public:
 	bool IsFull();
 
 private:
-	UPROPERTY()
-	class APenguinCharacter* PenguinOwnerCharacter;
-
-	UPROPERTY()
-	class APenguinPlayerController* PenguinOwnerController;
-
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 	

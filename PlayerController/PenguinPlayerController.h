@@ -23,6 +23,8 @@ public:
 	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
 	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
+
+	float SingleTripTime = 0.f;
 	
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
 

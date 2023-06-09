@@ -2,8 +2,9 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "PenguinBattle/Character/PenguinCharacter.h"
+#include "PenguinBattle/PenguinComponents/LagCompensationComponent.h"
+#include "PenguinBattle/PlayerController/PenguinPlayerController.h"
 #include "Sound/SoundCue.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -22,17 +23,33 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 
 		APenguinCharacter* BlasterCharacter = Cast<APenguinCharacter>(FireHit.GetActor());
-		if (BlasterCharacter && HasAuthority() && InstigatorController)
+		if (BlasterCharacter && InstigatorController)
 		{
-			const float DamageToCause = FireHit.BoneName.ToString() == FString("Head") ? HeadShotDamage : Damage;
-			
-			UGameplayStatics::ApplyDamage(
-				BlasterCharacter,
-				DamageToCause,
-				InstigatorController,
-				this,
-				UDamageType::StaticClass()
-			);
+			if (HasAuthority() && !bUseServerSideRewind)
+			{
+				UGameplayStatics::ApplyDamage(
+					BlasterCharacter,
+					Damage,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
+				);
+			}
+			if (!HasAuthority() && bUseServerSideRewind)
+			{
+				PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(OwnerPawn) : PenguinOwnerCharacter;
+				PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(InstigatorController) : PenguinOwnerController;
+				if (PenguinOwnerController && PenguinOwnerCharacter && PenguinOwnerCharacter->GetLagCompensation())
+				{
+					PenguinOwnerCharacter->GetLagCompensation()->ServerScoreRequest(
+						BlasterCharacter,
+						Start,
+						HitTarget,
+						PenguinOwnerController->GetServerTime() - PenguinOwnerController->SingleTripTime,
+						this
+					);
+				}
+			}
 		}
 		if (ImpactParticles)
 		{

@@ -25,12 +25,12 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 		{
 			FHitResult FireHit;
 			WeaponTraceHit(Start, HitTarget, FireHit);
-			APenguinCharacter* BlasterCharacter = Cast<APenguinCharacter>(FireHit.GetActor());
-			if (BlasterCharacter)
+			APenguinCharacter* PenguinCharacter = Cast<APenguinCharacter>(FireHit.GetActor());
+			if (PenguinCharacter)
 			{
 				const bool bHeadShot = FireHit.BoneName.ToString() == FString("Head");
-				if (HitMap.Contains(BlasterCharacter)) HitMap[BlasterCharacter]++;
-				else HitMap.Emplace(BlasterCharacter, 1);
+				if (HitMap.Contains(PenguinCharacter)) HitMap[PenguinCharacter]++;
+				else HitMap.Emplace(PenguinCharacter, 1);
 
 				if (ImpactParticles)
 				{
@@ -55,8 +55,12 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 		}
 		for (auto HitPair : HitMap)
 		{
-			if (HitPair.Key && HasAuthority() && InstigatorController)
+			if (HitPair.Key && InstigatorController)
 			{
+				if (HasAuthority())
+				{
+					
+				}
 				UGameplayStatics::ApplyDamage(
 					HitPair.Key,
 					Damage * HitPair.Value,
