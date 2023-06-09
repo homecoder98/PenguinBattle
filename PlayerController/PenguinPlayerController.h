@@ -4,6 +4,8 @@
 #include "GameFramework/PlayerController.h"
 #include "PenguinPlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
+
 UCLASS()
 class PENGUINBATTLE_API APenguinPlayerController : public APlayerController
 {
@@ -24,6 +26,8 @@ public:
 	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
 
+	FHighPingDelegate HighPingDelegate;
+	
 	float SingleTripTime = 0.f;
 	
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
@@ -103,6 +107,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float CheckPingFrequency = 20.f;
 
+	UFUNCTION(Server, Reliable)
+	void ServerReportPingStatus(bool bHighPing);
+	
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
 	

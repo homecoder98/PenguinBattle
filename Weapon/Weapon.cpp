@@ -61,6 +61,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -132,6 +133,15 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 		}
 		EnableCustomDepth(false);
+		PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(GetOwner()) : PenguinOwnerCharacter;
+		if (PenguinOwnerCharacter)
+		{
+			PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(PenguinOwnerCharacter->Controller) : PenguinOwnerController;
+			if (PenguinOwnerController && HasAuthority() && !PenguinOwnerController->HighPingDelegate.IsBound())
+			{
+				PenguinOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+		}
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
@@ -211,6 +221,15 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 		}
 		EnableCustomDepth(false);
+		PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(GetOwner()) : PenguinOwnerCharacter;
+		if (PenguinOwnerCharacter)
+		{
+			PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(PenguinOwnerCharacter->Controller) : PenguinOwnerController;
+			if (PenguinOwnerController && HasAuthority() && !PenguinOwnerController->HighPingDelegate.IsBound())
+			{
+				PenguinOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+		}
 		break;
 	case EWeaponState::EWS_Dropped:
 		if (HasAuthority())
@@ -280,7 +299,22 @@ void AWeapon::Dropped()
 	SetOwner(nullptr);
 	PenguinOwnerCharacter = nullptr;
 	PenguinOwnerController = nullptr;
+	
+	PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(GetOwner()) : PenguinOwnerCharacter;
+	if (PenguinOwnerCharacter)
+	{
+		PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(PenguinOwnerCharacter->Controller) : PenguinOwnerController;
+		if (PenguinOwnerController && HasAuthority() && !PenguinOwnerController->HighPingDelegate.IsBound())
+		{
+			PenguinOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
+
+ void AWeapon::OnPingTooHigh(bool bPingTooHigh)
+ {
+	bUseServerSideRewind = !bPingTooHigh;
+ }
 
  FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
  {

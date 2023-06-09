@@ -23,9 +23,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 
 		APenguinCharacter* BlasterCharacter = Cast<APenguinCharacter>(FireHit.GetActor());
-		if (BlasterCharacter && InstigatorController)
+		if (BlasterCharacter && InstigatorController && OwnerPawn->IsLocallyControlled())
 		{
-			if (HasAuthority() && !bUseServerSideRewind)
+			if (HasAuthority())
 			{
 				UGameplayStatics::ApplyDamage(
 					BlasterCharacter,
@@ -39,7 +39,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			{
 				PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(OwnerPawn) : PenguinOwnerCharacter;
 				PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(InstigatorController) : PenguinOwnerController;
-				if (PenguinOwnerController && PenguinOwnerCharacter && PenguinOwnerCharacter->GetLagCompensation())
+				if (PenguinOwnerController && PenguinOwnerCharacter && PenguinOwnerCharacter->GetLagCompensation() && PenguinOwnerCharacter->IsLocallyControlled())
 				{
 					PenguinOwnerCharacter->GetLagCompensation()->ServerScoreRequest(
 						BlasterCharacter,

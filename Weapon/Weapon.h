@@ -50,13 +50,16 @@ public:
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()
 	class APenguinCharacter* PenguinOwnerCharacter;
 	UPROPERTY()
 	class APenguinPlayerController* PenguinOwnerController;
+	
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 	
 	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
 	bool bUseScatter = false;

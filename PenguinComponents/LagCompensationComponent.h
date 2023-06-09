@@ -70,6 +70,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, FColor Color);
+
+	/*
+	 *  HitScan
+	 */
 	FServerSideRewindResult  ServerSideRewind(
 		class APenguinCharacter* HitCharacter, 
 		const FVector_NetQuantize& TraceStart, 
@@ -128,6 +132,33 @@ protected:
 		const TArray<FFramePackage>& FramePackages,
 		const FVector_NetQuantize& TraceStart,
 		const TArray<FVector_NetQuantize>& HitLocations
+	);
+
+	/*
+	 *  Projectile
+	 */
+public:
+	FServerSideRewindResult ProjectileServerSideRewind(
+		APenguinCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
+	
+	FServerSideRewindResult ProjectileConfirmHit(
+		const FFramePackage& Package,
+		APenguinCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
+	
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerScoreRequest(
+		APenguinCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
 	);
 	
 private:

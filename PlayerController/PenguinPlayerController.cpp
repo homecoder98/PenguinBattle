@@ -271,17 +271,24 @@ FString APenguinPlayerController::GetTeamsInfoText(APenguinGameState* PenguinGam
 
 void APenguinPlayerController::CheckPing(float DeltaTime)
 {
+	if (HasAuthority()) return;
 	HighPingRunningTime += DeltaTime;
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
-			if (HighPingThreshold < PlayerState->GetPingInMilliseconds() * 4) // ping is compressed; it's actually ping / 4
+			// UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4 : %d"), PlayerState->GetPing() * 4);
+			if (PlayerState->GetPingInMilliseconds() * 4 > HighPingThreshold) // ping is compressed; it's actually ping / 4
 				{
-					HighPingWarning();
-					PingAnimationRunningTime = 0.f;
+				HighPingWarning();
+				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
 				}
+			else
+			{
+				ServerReportPingStatus(false);
+			}
 		}
 		HighPingRunningTime = 0.f;
 	}
@@ -297,6 +304,11 @@ void APenguinPlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+void APenguinPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void APenguinPlayerController::HighPingWarning()

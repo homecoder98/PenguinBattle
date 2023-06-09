@@ -4,6 +4,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "PenguinBattle/Character/PenguinCharacter.h"
+#include "PenguinBattle/PenguinComponents/LagCompensationComponent.h"
+#include "PenguinBattle/PlayerController/PenguinPlayerController.h"
 #include "Sound/SoundCue.h"
 
 void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
@@ -53,20 +55,35 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 				}
 			}
 		}
+		TArray<APenguinCharacter*> HitCharacters;
 		for (auto HitPair : HitMap)
 		{
 			if (HitPair.Key && InstigatorController)
 			{
-				if (HasAuthority())
+				if (HasAuthority() && !bUseServerSideRewind)
 				{
-					
+					UGameplayStatics::ApplyDamage(
+						HitPair.Key,
+						Damage * HitPair.Value,
+						InstigatorController,
+						this,
+						UDamageType::StaticClass()
+					);
 				}
-				UGameplayStatics::ApplyDamage(
-					HitPair.Key,
-					Damage * HitPair.Value,
-					InstigatorController,
-					this,
-					UDamageType::StaticClass()
+				HitCharacters.Add(HitPair.Key);
+			}
+		}
+		if (!HasAuthority() && bUseServerSideRewind && OwnerPawn->IsLocallyControlled())
+		{
+			PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(OwnerPawn) : PenguinOwnerCharacter;
+			PenguinOwnerController = PenguinOwnerController == nullptr ? Cast<APenguinPlayerController>(InstigatorController) : PenguinOwnerController;
+			if (PenguinOwnerController && PenguinOwnerCharacter && PenguinOwnerCharacter->GetLagCompensation())
+			{
+				PenguinOwnerCharacter->GetLagCompensation()->ShotgunServerScoreRequest(
+					HitCharacters,
+					Start,
+					HitTargets,
+					PenguinOwnerController->GetServerTime() - PenguinOwnerController->SingleTripTime
 				);
 			}
 		}
