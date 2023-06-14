@@ -1,5 +1,6 @@
 #include "PenguinAnimInstance.h"
 #include "PenguinCharacter.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "PenguinBattle/Weapon/Weapon.h"
@@ -42,50 +43,49 @@ void UPenguinAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 6.f);//-180~180전환시 지글없애려 0~180로 변환
 	YawOffset = DeltaRotation.Yaw;
 
-	CharacterRotationLastFrame = CharacterRotation;
-	CharacterRotation = PenguinCharacter->GetActorRotation();
-	const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotationLastFrame, CharacterRotation);
-	const float Target = Delta.Yaw / DeltaTime;
-	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.f);
-	Lean = FMath::Clamp(Interp, -90., 90.f);
+	// CharacterRotationLastFrame = CharacterRotation;
+	// CharacterRotation = PenguinCharacter->GetActorRotation();
+	// const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotationLastFrame, CharacterRotation);
+	// const float Target = Delta.Yaw / DeltaTime;
+	// const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.f);
+	// Lean = FMath::Clamp(Interp, -90., 90.f);
 
 	// Aim Offset
 	AO_Yaw = PenguinCharacter->GetAO_Yaw();
 	AO_Pitch = PenguinCharacter->GetAO_Pitch();
 
-
+	UE_LOG(LogTemp,Warning,TEXT("yaw : %f, pitch : %f"),AO_Yaw, AO_Pitch);
+	
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && PenguinCharacter->GetMesh())
 	{
-		// FABRIK
-		
-		// LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), RTS_World);
-		// FVector OutPosition;
-		// FRotator OutRotation;
-		// PenguinCharacter->GetMesh()->TransformToBoneSpace(FName("Arm_R_2"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
-		// LeftHandTransform.SetLocation(OutPosition);
-		// LeftHandTransform.SetRotation(FQuat(OutRotation));
+		// 왼손 FABRIK
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+		FVector OutPosition;
+		FRotator OutRotation;
+		PenguinCharacter->GetMesh()->TransformToBoneSpace(FName("Arm__R_2"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
 
-		// Pointing Correct
 		if (PenguinCharacter->IsLocallyControlled())
 		{
 			bLocallyControlled = true;
-			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Arm_R_2"), RTS_World);
-			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(),
-				RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - PenguinCharacter->GetHitTarget()));
-			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 30.f);
-			
+			// 현재 보는 방향으로 총구 확인
+			// FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Arm__R_2"), ERelativeTransformSpace::RTS_World);
 			FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"), RTS_World);
-			FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+			FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::Y));
+			// FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(PenguinCharacter->GetActorLocation(), PenguinCharacter->GetHitTarget());
+
 			DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.f,FColor::Red);
-			DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), PenguinCharacter->GetHitTarget(), FColor::Blue);
+			DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), PenguinCharacter->GetHitTarget(), FColor::Orange);
 		}
 	}
-
-	bUseFABRIK = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading;
-	if (PenguinCharacter->IsLocallyControlled())
-	{
-		bUseFABRIK = !PenguinCharacter->IsLocallyReloading();
-	}
-	bUseOffsets = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
-	bTransformRightHand = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
+	
+	//
+	// bUseFABRIK = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	// if (PenguinCharacter->IsLocallyControlled())
+	// {
+	// 	bUseFABRIK = !PenguinCharacter->IsLocallyReloading();
+	// }
+	// bUseOffsets = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
+	// bTransformRightHand = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
 }

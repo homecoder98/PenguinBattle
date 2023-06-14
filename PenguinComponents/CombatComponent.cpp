@@ -317,7 +317,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
+	Character->bUseControllerRotationYaw = false;
 }
 
 void UCombatComponent::Reload()
@@ -438,11 +438,12 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		{
 			HUDPackage.CrosshairColor = FLinearColor::White;
 		}
-		// if (!TraceHitResult.bBlockingHit)
-		// {
-		// 	TraceHitResult.ImpactPoint = End;
-		// 	HitTarget = End;
-		// }
+		
+		if (!TraceHitResult.bBlockingHit)
+		{
+			TraceHitResult.ImpactPoint = End;
+			HitTarget = End;
+		}
 		// else
 		// {
 		// 	HitTarget = TraceHitResult.ImpactPoint;

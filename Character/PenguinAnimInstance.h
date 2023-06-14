@@ -64,9 +64,6 @@ private:
 	FTransform LeftHandTransform;
 
 	UPROPERTY(BlueprintReadOnly, Category="Character", meta=(AllowPrivateAccess="true"))
-	FRotator RightHandRotation;
-
-	UPROPERTY(BlueprintReadOnly, Category="Character", meta=(AllowPrivateAccess="true"))
 	bool bLocallyControlled;
 	
 	/*
