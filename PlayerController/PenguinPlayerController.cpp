@@ -152,6 +152,12 @@ void APenguinPlayerController::PollInit()
 				SetHUDHealth(HUDHealth, HUDMaxHealth);
 				SetHUDScore(HUDScore);
 				SetHUDDefeats(HUDDefeats);
+
+				APenguinCharacter* PenguinCharacter = Cast<APenguinCharacter>(GetPawn());
+				if (PenguinCharacter && PenguinCharacter->GetCombat())
+				{
+					SetHUDGrenades(PenguinCharacter->GetCombat()->GetGrenades());
+				}
 			}
 		}
 	}
@@ -520,6 +526,25 @@ void APenguinPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 		int32 Seconds = CountdownTime - Minutes * 60;
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 		PenguinHUD->Announcement->WarmupTime->SetText(FText::FromString(CountdownText));
+	}
+}
+
+void APenguinPlayerController::SetHUDGrenades(int32 Grenades)
+{
+	PenguinHUD = PenguinHUD ==nullptr ? Cast<APenguinHUD>(GetHUD()) : PenguinHUD;
+
+	bool bHUDValid = PenguinHUD &&
+		PenguinHUD->CharacterOverlay &&
+		PenguinHUD->CharacterOverlay->GrenadeText;
+
+	if (bHUDValid)
+	{
+		FString GrenadesText = FString::Printf(TEXT("%d"), Grenades);
+		PenguinHUD->CharacterOverlay->GrenadeText->SetText(FText::FromString(GrenadesText));
+	}
+	else
+	{
+		HUDGrenades = Grenades;
 	}
 }
 

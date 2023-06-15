@@ -54,7 +54,7 @@ void UPenguinAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = PenguinCharacter->GetAO_Yaw();
 	AO_Pitch = PenguinCharacter->GetAO_Pitch();
 
-	UE_LOG(LogTemp,Warning,TEXT("yaw : %f, pitch : %f"),AO_Yaw, AO_Pitch);
+	// UE_LOG(LogTemp,Warning,TEXT("yaw : %f, pitch : %f"),AO_Yaw, AO_Pitch);
 	
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && PenguinCharacter->GetMesh())
 	{
@@ -80,12 +80,12 @@ void UPenguinAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 	}
 	
-	//
-	// bUseFABRIK = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	
+	bUseFABRIK = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied;
 	// if (PenguinCharacter->IsLocallyControlled())
 	// {
 	// 	bUseFABRIK = !PenguinCharacter->IsLocallyReloading();
 	// }
-	// bUseOffsets = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
-	// bTransformRightHand = PenguinCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PenguinCharacter->GetDisableGameplay();
+	bUseOffsets = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied && !PenguinCharacter->GetDisableGameplay();
+	bTransformRightHand = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied && !PenguinCharacter->GetDisableGameplay();
 }

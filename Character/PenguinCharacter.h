@@ -23,6 +23,7 @@ public:
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
+	void PlayThrowGrenadeMontage();
 	
 	void Elim(bool bPlayerLeftGame);
 	
@@ -56,7 +57,6 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
-
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
@@ -74,6 +74,7 @@ protected:
 	void FireButtonReleased();
 	void PlayHitReactMontage();
 	void PlayElimMontage();
+	void GrenadeButtonPressed();
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
@@ -82,6 +83,12 @@ protected:
 	// Poll for any relevant classes and initialize our HUD
 	void PollInit();
 	void RotateInPlace(float DeltaTime);
+	
+	/*
+	 *  Grenade
+	 */
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 
 	/*
 	 * Hit boxes used for server-side rewind
@@ -182,13 +189,16 @@ private:
 	class UAnimMontage* FireWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* HitReactMontage;
+	UAnimMontage* HitReactMontage;
 
     UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* ElimMontage;
+	UAnimMontage* ElimMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* ReloadMontage;
+	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ThrowGrenadeMontage;
 	
 	/*
 	 * To Remove Character when too close
@@ -295,4 +305,5 @@ public:
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 };
