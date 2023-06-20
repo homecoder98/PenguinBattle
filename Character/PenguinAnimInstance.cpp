@@ -82,10 +82,10 @@ void UPenguinAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	
 	
 	bUseFABRIK = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied;
-	// if (PenguinCharacter->IsLocallyControlled())
-	// {
-	// 	bUseFABRIK = !PenguinCharacter->IsLocallyReloading();
-	// }
+	if (PenguinCharacter->IsLocallyControlled())
+	{
+		bUseFABRIK = !PenguinCharacter->IsLocallyReloading();
+	}
 	bUseOffsets = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied && !PenguinCharacter->GetDisableGameplay();
 	bTransformRightHand = PenguinCharacter->GetCombatState() != ECombatState::ECS_Unoccupied && !PenguinCharacter->GetDisableGameplay();
 }

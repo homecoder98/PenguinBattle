@@ -26,6 +26,12 @@ public:
 	void UpdateCarriedAmmo();
 	void PlayEquipWeaponSound();
 	void ReloadEmptyWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
+	void UpdateShotgunAmmoValue();
 	void UpdateAmmoValue();
 	void ShowAttachedGrenade(bool bShowGrenade);
 
@@ -71,7 +77,7 @@ protected:
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 
-	UFUNCTION(Server, Reliable, WithValidation)
+	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float FireDelay);
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -197,6 +203,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeLauncherAmmo = 12;
 
+	UPROPERTY(EditAnywhere)
+	int32 StartingGrenade = 12;
+	
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
 	int32 Grenades = 0;
 

@@ -174,7 +174,11 @@ void APenguinCharacter::PlayFireMontage(bool bAiming)
 	{
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		FName SectionName;
-		SectionName = bAiming ? FName("RifleHip") : FName("RifleAim");
+		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		if (Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+		{
+			SectionName = FName("Shotgun");
+		}
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
@@ -242,7 +246,7 @@ void APenguinCharacter::PlayReloadMontage()
 				SectionName = FName("Rifle");
 				break;
 			case EWeaponType::EWT_Shotgun:
-				SectionName = FName("Rifle");
+				SectionName = FName("Shotgun");
 				break;
 			case EWeaponType::EWT_SniperRifle:
 				SectionName = FName("Rifle");
@@ -386,13 +390,22 @@ void APenguinCharacter::PollInit()
 
 void APenguinCharacter::RotateInPlace(float DeltaTime)
 {
+	// if (Combat && Combat->bHoldingTheFlag)
+	// {
+	// 	bUseControllerRotationYaw = false;
+	// 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	// 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	// 	return;
+	// }
+	if (Combat && Combat->EquippedWeapon) GetCharacterMovement()->bOrientRotationToMovement = false;
+	if (Combat && Combat->EquippedWeapon) bUseControllerRotationYaw = true;
 	if (bDisableGameplay)
 	{
 		bUseControllerRotationYaw = false;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
-	if (GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled())
+	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
 	}
@@ -405,6 +418,7 @@ void APenguinCharacter::RotateInPlace(float DeltaTime)
 		}
 		CalculateAO_Pitch();
 	}
+
 }
 
 void APenguinCharacter::OnRep_ReplicatedMovement()
@@ -651,6 +665,7 @@ void APenguinCharacter::AimOffset(float DeltaTime)
 	}
 
 	CalculateAO_Pitch();
+	
 }
 
 void APenguinCharacter::CalculateAO_Pitch()
@@ -658,10 +673,11 @@ void APenguinCharacter::CalculateAO_Pitch()
 	AO_Pitch = GetBaseAimRotation().Pitch;
 	if (AO_Pitch && !IsLocallyControlled())
 	{
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		if (AO_Pitch < 270.f) return;
 		FVector2d InRange(270.f, 360.f);
 		FVector2d OutRange(-90.f, 0.f);
 		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
-		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 }
 
@@ -697,10 +713,12 @@ void APenguinCharacter::SimProxiesTurn() // 루트본 리플리케이션시 틱�
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
-	
+
 	ProxyRotationLastFrame = ProxyRotation;
 	ProxyRotation = GetActorRotation();
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
+
+	// UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
 
 	if (FMath::Abs(ProxyYaw) > TurnThreshold)
 	{

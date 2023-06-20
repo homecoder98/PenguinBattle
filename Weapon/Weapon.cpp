@@ -7,6 +7,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "PenguinBattle/Character/PenguinCharacter.h"
+#include "PenguinBattle/PenguinComponents/CombatComponent.h"
 #include "PenguinBattle/PlayerController/PenguinPlayerController.h"
 
 AWeapon::AWeapon()
@@ -61,6 +62,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, Ammo);
 	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
@@ -157,6 +159,16 @@ void AWeapon::OnRep_WeaponState()
 		break;
 	}
 }
+
+ void AWeapon::OnRep_Ammo()
+ {
+	PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(GetOwner()) : PenguinOwnerCharacter;
+	if (PenguinOwnerCharacter && PenguinOwnerCharacter->GetCombat() && IsFull())
+	{
+		PenguinOwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
+	SetHUDAmmo();
+ }
 
 void AWeapon::SpendRound()
 {
@@ -275,7 +287,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 		if (AmmoEjectSocket)
 		{
 			FTransform SocketTransform = AmmoEjectSocket->GetSocketTransform(GetWeaponMesh());
-
+	
 			FActorSpawnParameters SpawnParameters;
 			UWorld* World = GetWorld();
 			if (World)
@@ -329,8 +341,9 @@ void AWeapon::Dropped()
 	const FVector EndLoc = SphereCenter + RandVec; // Random Point
 	const FVector ToEndLoc = EndLoc - TraceStart;
 
-	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12.f, FColor::Red, true);
-	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Blue, true);
+	// DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12.f, FColor::Red, true);
+	// DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Blue, true);
+	
 	// DrawDebugLine(GetWorld(), TraceStart, FVector(TraceStart + EndLoc * TRACE_LENGTH / ToEndLoc.Size()), FColor::Orange, true);
 
 	return FVector(TraceStart + EndLoc * TRACE_LENGTH / ToEndLoc.Size()); // From MuzzleFlash To Sphere Random Point Vector

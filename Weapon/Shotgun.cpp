@@ -23,6 +23,8 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 
 		// Maps hit character to number of times hit
 		TMap<APenguinCharacter*, uint32> HitMap;
+		TMap<APenguinCharacter*, uint32> HeadShotHitMap;
+		
 		for (FVector_NetQuantize HitTarget : HitTargets)
 		{
 			FHitResult FireHit;
@@ -31,9 +33,20 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			if (PenguinCharacter)
 			{
 				const bool bHeadShot = FireHit.BoneName.ToString() == FString("Head");
-				if (HitMap.Contains(PenguinCharacter)) HitMap[PenguinCharacter]++;
-				else HitMap.Emplace(PenguinCharacter, 1);
+				// if (HitMap.Contains(PenguinCharacter)) HitMap[PenguinCharacter]++;
+				// else HitMap.Emplace(PenguinCharacter, 1);
 
+				if (bHeadShot)
+				{
+					if (HeadShotHitMap.Contains(PenguinCharacter)) HeadShotHitMap[PenguinCharacter]++;
+					else HeadShotHitMap.Emplace(PenguinCharacter, 1);
+				}
+				else
+				{
+					if (HitMap.Contains(PenguinCharacter)) HitMap[PenguinCharacter]++;
+					else HitMap.Emplace(PenguinCharacter, 1);
+				}
+				
 				if (ImpactParticles)
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(
@@ -56,23 +69,50 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			}
 		}
 		TArray<APenguinCharacter*> HitCharacters;
+		TMap<APenguinCharacter*, float> DamageMap;
+		
+		// Calculate body shot damage by multiplying times hit x Damage - store in DamageMap
 		for (auto HitPair : HitMap)
 		{
-			if (HitPair.Key && InstigatorController)
+			if (HitPair.Key)
 			{
-				if (HasAuthority() && !bUseServerSideRewind)
+				DamageMap.Emplace(HitPair.Key, HitPair.Value * Damage);
+
+				HitCharacters.AddUnique(HitPair.Key);
+			}
+		}
+
+		// Calculate head shot damage by multiplying times hit x HeadShotDamage - store in DamageMap
+		for (auto HeadShotHitPair : HeadShotHitMap)
+		{
+			if (HeadShotHitPair.Key)
+			{
+				if (DamageMap.Contains(HeadShotHitPair.Key)) DamageMap[HeadShotHitPair.Key] += HeadShotHitPair.Value * HeadShotDamage;
+				else DamageMap.Emplace(HeadShotHitPair.Key, HeadShotHitPair.Value * HeadShotDamage);
+
+				HitCharacters.AddUnique(HeadShotHitPair.Key);
+			}
+		}
+
+		// Loop through DamageMap to get total damage for each character
+		for (auto DamagePair : DamageMap)
+		{
+			if (DamagePair.Key && InstigatorController)
+			{
+				bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+				if (HasAuthority() && bCauseAuthDamage)
 				{
 					UGameplayStatics::ApplyDamage(
-						HitPair.Key,
-						Damage * HitPair.Value,
+						DamagePair.Key, // Character that was hit
+						DamagePair.Value, // Damage calculated in the two for loops above
 						InstigatorController,
 						this,
 						UDamageType::StaticClass()
 					);
 				}
-				HitCharacters.Add(HitPair.Key);
 			}
 		}
+		
 		if (!HasAuthority() && bUseServerSideRewind && OwnerPawn->IsLocallyControlled())
 		{
 			PenguinOwnerCharacter = PenguinOwnerCharacter == nullptr ? Cast<APenguinCharacter>(OwnerPawn) : PenguinOwnerCharacter;
@@ -99,12 +139,14 @@ void AShotgun::ShotgunTraceEndWithScatter(const FVector& HitTarget, TArray<FVect
 	
 	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
 	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12.f, FColor::Orange, false, 3.f);
 	
 	for (uint32 i = 0; i < NumberOfPellets; i++)
 	{
 		const FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
 		const FVector EndLoc = SphereCenter + RandVec; // Random Point
-		FVector ToEndLoc = FVector(TraceStart + EndLoc * TRACE_LENGTH / ToEndLoc.Size());
-		HitTargets.Add(ToEndLoc);
+		HitTargets.Add(EndLoc);
+		// FVector ToEndLoc = FVector(TraceStart + EndLoc * TRACE_LENGTH / ToEndLoc.Size());
+		// DrawDebugSphere(GetWorld(), EndLoc, 3.f, 12.f, FColor::Blue, false, 3.f);
 	}
 }
